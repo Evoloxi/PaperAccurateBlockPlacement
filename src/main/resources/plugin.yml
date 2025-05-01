@@ -3,5 +3,5 @@ description: Implements the Carpet AccurateBlockPlacement protocol on Paper.
 version: 1.0.2
 author: DungeonDev, Evoloxi
 main: accurateblockplacement.AccurateBlockPlacement
-api-version: 1.19
+api-version: 1.21
 depend: [ProtocolLib]

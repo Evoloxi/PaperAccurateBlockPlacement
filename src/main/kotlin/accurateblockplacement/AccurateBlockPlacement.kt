@@ -45,14 +45,13 @@ import java.util.HashMap
 
 @Suppress("unused")
 class AccurateBlockPlacement : JavaPlugin(), Listener {
-    private lateinit var protocolManager: ProtocolManager
+    private val protocolManager by lazy { ProtocolLibrary.getProtocolManager() }
 
     private val playerPacketDataHashMap: MutableMap<Player?, PacketData?> =
         HashMap<Player?, PacketData?>()
 
     override fun onEnable() {
         logger.info("AccurateBlockPlacement loaded!")
-        protocolManager = ProtocolLibrary.getProtocolManager()
         protocolManager.addPacketListener(object :
             PacketAdapter(this, ListenerPriority.NORMAL, PacketType.Play.Client.USE_ITEM) {
             override fun onPacketReceiving(event: PacketEvent) {

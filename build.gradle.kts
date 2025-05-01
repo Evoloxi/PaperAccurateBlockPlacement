@@ -54,4 +54,11 @@ tasks {
         relocate("org.jetbrains.annotations", "me.evo.jetbrains.annotations")
         relocate("org.intellij.lang.annotations", "me.evo.intellij.lang.annotations")
     }
+
+    jar {
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        from({
+            configurations.runtimeClasspath.get().filter { it.name.endsWith("jar") }.map { zipTree(it) }
+        })
+    }
 }
