@@ -1,286 +1,306 @@
-package net.dungeondev.accurateblockplacement;
+package accurateblockplacement
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.ProtocolManager;
-import com.comphenix.protocol.events.ListenerPriority;
-import com.comphenix.protocol.events.PacketAdapter;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.utility.MinecraftReflection;
-import com.comphenix.protocol.utility.StreamSerializer;
-import com.comphenix.protocol.wrappers.BlockPosition;
-import com.comphenix.protocol.wrappers.MinecraftKey;
-import com.comphenix.protocol.wrappers.MovingObjectPositionBlock;
-import com.comphenix.protocol.wrappers.nbt.NbtCompound;
-import com.comphenix.protocol.wrappers.nbt.NbtFactory;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufInputStream;
-import io.netty.buffer.Unpooled;
-import org.bukkit.Axis;
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
-import org.bukkit.block.data.Bisected;
-import org.bukkit.block.data.BlockData;
-import org.bukkit.block.data.Directional;
-import org.bukkit.block.data.Orientable;
-import org.bukkit.block.data.type.*;
-import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.util.Vector;
+import com.comphenix.protocol.PacketType
+import com.comphenix.protocol.ProtocolLibrary
+import com.comphenix.protocol.ProtocolManager
+import com.comphenix.protocol.events.ListenerPriority
+import com.comphenix.protocol.events.PacketAdapter
+import com.comphenix.protocol.events.PacketContainer
+import com.comphenix.protocol.events.PacketEvent
+import com.comphenix.protocol.utility.MinecraftReflection
+import com.comphenix.protocol.utility.StreamSerializer
+import com.comphenix.protocol.wrappers.BlockPosition
+import com.comphenix.protocol.wrappers.MinecraftKey
+import com.comphenix.protocol.wrappers.MovingObjectPositionBlock
+import com.comphenix.protocol.wrappers.nbt.NbtBase
+import com.comphenix.protocol.wrappers.nbt.NbtCompound
+import com.comphenix.protocol.wrappers.nbt.NbtFactory
+import io.netty.buffer.ByteBuf
+import io.netty.buffer.ByteBufInputStream
+import io.netty.buffer.Unpooled
+import org.bukkit.Axis
+import org.bukkit.block.Block
+import org.bukkit.block.BlockFace
+import org.bukkit.block.data.Bisected
+import org.bukkit.block.data.BlockData
+import org.bukkit.block.data.Directional
+import org.bukkit.block.data.Orientable
+import org.bukkit.block.data.type.*
+import org.bukkit.entity.Player
+import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
+import org.bukkit.event.Listener
+import org.bukkit.event.block.BlockPlaceEvent
+import org.bukkit.event.player.PlayerJoinEvent
+import org.bukkit.event.player.PlayerQuitEvent
+import org.bukkit.plugin.java.JavaPlugin
+import org.bukkit.util.Vector
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.io.ByteArrayOutputStream
+import java.io.DataInputStream
+import java.io.DataOutputStream
+import java.io.IOException
+import java.lang.reflect.InvocationTargetException
+import java.util.HashMap
 
-public class AccurateBlockPlacement extends JavaPlugin implements Listener {
-    private ProtocolManager protocolManager;
+@Suppress("unused")
+class AccurateBlockPlacement : JavaPlugin(), Listener {
+    private lateinit var protocolManager: ProtocolManager
 
-    private final Map<Player, PacketData> playerPacketDataHashMap = new HashMap<>();
+    private val playerPacketDataHashMap: MutableMap<Player?, PacketData?> =
+        HashMap<Player?, PacketData?>()
 
-    @Override
-    public void onEnable() {
-        getLogger().info("AccurateBlockPlacement loaded!");
-        protocolManager = ProtocolLibrary.getProtocolManager();
-        protocolManager.addPacketListener(new PacketAdapter(this, ListenerPriority.NORMAL, PacketType.Play.Client.USE_ITEM) {
-            @Override
-            public void onPacketReceiving(final PacketEvent event) {
-                onBlockBuildPacket(event);
+    override fun onEnable() {
+        logger.info("AccurateBlockPlacement loaded!")
+        protocolManager = ProtocolLibrary.getProtocolManager()
+        protocolManager.addPacketListener(object :
+            PacketAdapter(this, ListenerPriority.NORMAL, PacketType.Play.Client.USE_ITEM) {
+            override fun onPacketReceiving(event: PacketEvent) {
+                onBlockBuildPacket(event)
             }
-        });
-        protocolManager.addPacketListener(new PacketAdapter(this, ListenerPriority.NORMAL, PacketType.Play.Client.CUSTOM_PAYLOAD) {
-            @Override
-            public void onPacketReceiving(final PacketEvent event) {
-                onCustomPayload(event);
+        })
+        protocolManager.addPacketListener(object :
+            PacketAdapter(this, ListenerPriority.NORMAL, PacketType.Play.Client.CUSTOM_PAYLOAD) {
+            override fun onPacketReceiving(event: PacketEvent) {
+                onCustomPayload(event)
             }
-        });
-        getServer().getPluginManager().registerEvents(this, this);
+        })
+        server.pluginManager.registerEvents(this, this)
     }
 
 
     @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent event) {
-        PacketContainer packet = new PacketContainer(PacketType.Play.Server.CUSTOM_PAYLOAD);
-        packet.getMinecraftKeys().writeSafely(0, new MinecraftKey("carpet", "hello"));
-        ByteArrayOutputStream rawData = new ByteArrayOutputStream();
-        DataOutputStream outputStream = new DataOutputStream(rawData);
+    fun onPlayerJoin(event: PlayerJoinEvent) {
+        val packet = PacketContainer(PacketType.Play.Server.CUSTOM_PAYLOAD)
+        packet.minecraftKeys.writeSafely(0, MinecraftKey("carpet", "hello"))
+        val rawData = ByteArrayOutputStream()
+        val outputStream = DataOutputStream(rawData)
         try {
-            StreamSerializer.getDefault().serializeVarInt(outputStream, 69);
-            StreamSerializer.getDefault().serializeString(outputStream, "SPIGOT-ABP");
-            packet.getModifier().writeSafely(1, MinecraftReflection.getPacketDataSerializer(Unpooled.wrappedBuffer(rawData.toByteArray())));
-            protocolManager.sendServerPacket(event.getPlayer(), packet);
-        } catch (IOException | InvocationTargetException ignored) {
+            StreamSerializer.getDefault().serializeVarInt(outputStream, 69)
+            StreamSerializer.getDefault().serializeString(outputStream, "SPIGOT-ABP")
+            packet.modifier.writeSafely(
+                1,
+                MinecraftReflection.getPacketDataSerializer(Unpooled.wrappedBuffer(rawData.toByteArray()))
+            )
+            protocolManager.sendServerPacket(event.player, packet)
+        } catch (_: IOException) {
+        } catch (_: InvocationTargetException) {
         }
     }
 
     @EventHandler
-    public void onPlayerQuit(PlayerQuitEvent event) {
-        playerPacketDataHashMap.remove(event.getPlayer());
+    fun onPlayerQuit(event: PlayerQuitEvent) {
+        playerPacketDataHashMap.remove(event.player)
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    public void onBuildEvent(BlockPlaceEvent event) {
-        Player player = event.getPlayer();
-        PacketData packetData = playerPacketDataHashMap.get(player);
-        if (packetData == null) {
-            return;
+    fun onBuildEvent(event: BlockPlaceEvent) {
+        val player: Player? = event.player
+        
+        val packetData = playerPacketDataHashMap[player] ?: return
+        val packetBlock = packetData.block ?: return
+        
+        val block: Block = event.block
+        if (packetBlock.x != block.x || packetBlock.y != block.y || packetBlock.z != block.z) {
+            playerPacketDataHashMap.remove(player)
+            return
         }
-        BlockPosition packetBlock = packetData.block();
-        Block block = event.getBlock();
-        if (packetBlock.getX() != block.getX() || packetBlock.getY() != block.getY() || packetBlock.getZ() != block.getZ()) {
-            playerPacketDataHashMap.remove(player);
-            return;
-        }
-        accurateBlockProtocol(event, packetData.protocolValue());
-        playerPacketDataHashMap.remove(player);
+        accurateBlockProtocol(event, packetData.protocolValue)
+        playerPacketDataHashMap.remove(player)
     }
 
-    private void accurateBlockProtocol(BlockPlaceEvent event, int protocolValue) {
-        Player player = event.getPlayer();
-        Block block = event.getBlock();
-        Block clickedBlock = event.getBlockAgainst();
-        BlockData blockData = block.getBlockData();
-        BlockData clickBlockData = clickedBlock.getBlockData();
-        if (blockData instanceof Bed) {
-            return;
-        }
-        if (blockData instanceof Directional directional) {
-            int facingIndex = protocolValue & 0xF;
+    private fun accurateBlockProtocol(event: BlockPlaceEvent, protocolValue: Int) {
+        var protocolValue = protocolValue
+        val player: Player = event.player
+        val block: Block = event.block
+        val clickedBlock: Block = event.blockAgainst
+        val blockData: BlockData = block.blockData
+        val clickBlockData: BlockData = clickedBlock.blockData
+
+        if (blockData is Bed) return
+
+        if (blockData is Directional) {
+            val facingIndex = protocolValue and 0xF
             if (facingIndex == 6) {
-                directional.setFacing(directional.getFacing().getOppositeFace());
+                blockData.facing = blockData.facing.oppositeFace
             } else if (facingIndex <= 5) {
-                BlockFace face = null;
-                Set<BlockFace> validFaces = directional.getFaces();
-                face = switch (facingIndex) {
-                    case 0 -> BlockFace.DOWN;
-                    case 1 -> BlockFace.UP;
-                    case 2 -> BlockFace.NORTH;
-                    case 3 -> BlockFace.SOUTH;
-                    case 4 -> BlockFace.WEST;
-                    case 5 -> BlockFace.EAST;
-                    default -> face;
-                };
-                if (validFaces.contains(face)) {
-                    directional.setFacing(face);
+                var face: BlockFace? = null
+                val validFaces: MutableSet<BlockFace?> = blockData.faces
+                face = when (facingIndex) {
+                    0 -> BlockFace.DOWN
+                    1 -> BlockFace.UP
+                    2 -> BlockFace.NORTH
+                    3 -> BlockFace.SOUTH
+                    4 -> BlockFace.WEST
+                    5 -> BlockFace.EAST
+                    else -> face
+                }
+                if (validFaces.contains(face) && face != null) {
+                    blockData.facing = face
                 }
             }
-            if (blockData instanceof Chest chest) {
+            if (blockData is Chest) {
                 //Merge chests if needed.
                 //Make sure we don't rotate a "half-double" chest!
-                chest.setType(Chest.Type.SINGLE);
-                BlockFace left = rotateCW(chest.getFacing());
+                blockData.type = Chest.Type.SINGLE
+                val left: BlockFace = rotateCW(blockData.facing)
                 // Handle clicking on a chest in the world.
-                if (!clickedBlock.equals(block) && clickBlockData.getMaterial() == chest.getMaterial()) {
-                    Chest clickChest = (Chest) clickBlockData;
-                    if (clickChest.getType() == Chest.Type.SINGLE && chest.getFacing() == clickChest.getFacing()) {
-                        BlockFace relation = block.getFace(clickedBlock);
-                        if (left == relation) {
-                            chest.setType(Chest.Type.LEFT);
-                        } else if (left.getOppositeFace() == relation) {
-                            chest.setType(Chest.Type.RIGHT);
+                if (clickedBlock != block && clickBlockData.material === blockData.material) {
+                    val clickChest: Chest = clickBlockData as Chest
+                    if (clickChest.type === Chest.Type.SINGLE && blockData.facing === clickChest.facing) {
+                        val relation: BlockFace? = block.getFace(clickedBlock)
+                        if (left === relation) {
+                            blockData.type = Chest.Type.LEFT
+                        } else if (left.oppositeFace === relation) {
+                            blockData.type = Chest.Type.RIGHT
                         }
                     }
                     // Handle placing a chest normally.
-                } else if (!player.isSneaking()) {
-                    BlockData leftBlock = block.getRelative(left).getBlockData();
-                    BlockData rightBlock = block.getRelative(left.getOppositeFace()).getBlockData();
-                    if (leftBlock.getMaterial() == chest.getMaterial() && ((Chest) leftBlock).getType() == Chest.Type.SINGLE && ((Chest) leftBlock).getFacing() == chest.getFacing()) {
-                        chest.setType(Chest.Type.LEFT);
-                    } else if (rightBlock.getMaterial() == chest.getMaterial() && ((Chest) rightBlock).getType() == Chest.Type.SINGLE && ((Chest) rightBlock).getFacing() == chest.getFacing()) {
-                        chest.setType(Chest.Type.RIGHT);
+                } else if (!player.isSneaking) {
+                    val leftBlock: BlockData = block.getRelative(left).blockData
+                    val rightBlock: BlockData = block.getRelative(left.oppositeFace).blockData
+                    if (leftBlock.material === blockData.material && (leftBlock as Chest).type === Chest.Type.SINGLE && leftBlock.facing === blockData.facing) {
+                        blockData.type = Chest.Type.LEFT
+                    } else if (rightBlock.material === blockData.material && (rightBlock as Chest).type === Chest.Type.SINGLE && rightBlock.facing === blockData.facing) {
+                        blockData.type = Chest.Type.RIGHT
                     }
                 }
-            } else if (blockData instanceof Stairs) {
-                ((Stairs) blockData).setShape(handleStairs(block, (Stairs) blockData));
+            } else if (blockData is Stairs) {
+                blockData.shape = handleStairs(block, blockData)
             }
-        } else if (blockData instanceof Orientable orientable) {
-            Set<Axis> validAxes = orientable.getAxes();
-            Axis axis = switch (protocolValue % 3) {
-                case 0 -> Axis.X;
-                case 1 -> Axis.Y;
-                case 2 -> Axis.Z;
-                default -> null;
-            };
-            if (validAxes.contains(axis)) {
-                orientable.setAxis(axis);
+        } else if (blockData is Orientable) {
+            val validAxes: MutableSet<Axis?> = blockData.axes
+            val axis: Axis? = when (protocolValue % 3) {
+                0 -> Axis.X
+                1 -> Axis.Y
+                2 -> Axis.Z
+                else -> null
+            }
+            if (validAxes.contains(axis) && axis != null) {
+                blockData.axis = axis
             }
         }
-        protocolValue &= 0xFFFFFFF0;
+        protocolValue = protocolValue and -0x10
         if (protocolValue >= 16) {
-            if (blockData instanceof Repeater repeater) {
-                int delay = protocolValue / 16;
-                if (delay >= repeater.getMinimumDelay() && delay <= repeater.getMaximumDelay()) {
-                    repeater.setDelay(delay);
+            if (blockData is Repeater) {
+                val delay = protocolValue / 16
+                if (delay >= blockData.minimumDelay && delay <= blockData.maximumDelay) {
+                    blockData.delay = delay
                 }
             } else if (protocolValue == 16) {
-                if (blockData instanceof Comparator) {
-                    ((Comparator) blockData).setMode(Comparator.Mode.SUBTRACT);
-                } else if (blockData instanceof Bisected bisected) {
-                    bisected.setHalf(Bisected.Half.TOP);
+                if (blockData is Comparator) {
+                    blockData.mode = Comparator.Mode.SUBTRACT
+                } else if (blockData is Bisected) {
+                    blockData.half = Bisected.Half.TOP
                 }
             }
         }
         if (block.canPlace(blockData)) {
-            block.setBlockData(blockData);
+            block.blockData = blockData
         } else {
-            event.setCancelled(true);
+            event.isCancelled = true
         }
     }
 
-    private BlockFace rotateCW(BlockFace in) {
-        BlockFace out = null;
-        switch (in) {
-            case NORTH -> out = BlockFace.EAST;
-            case WEST -> out = BlockFace.NORTH;
-            case SOUTH -> out = BlockFace.WEST;
-            case EAST -> out = BlockFace.SOUTH;
+    private fun rotateCW(`in`: BlockFace): BlockFace {
+        return when (`in`) {
+            BlockFace.NORTH -> BlockFace.EAST
+            BlockFace.WEST -> BlockFace.NORTH
+            BlockFace.SOUTH -> BlockFace.WEST
+            BlockFace.EAST -> BlockFace.SOUTH
+            else -> BlockFace.NORTH
         }
-        return out;
     }
 
-    private Stairs.Shape handleStairs(Block block, Stairs stairs) {
-        Bisected.Half half = stairs.getHalf();
-        BlockFace backFace = stairs.getFacing();
-        BlockFace frontFace = backFace.getOppositeFace();
-        BlockFace rightFace = rotateCW(backFace);
-        BlockFace leftFace = rightFace.getOppositeFace();
-        Stairs backStairs = block.getRelative(backFace).getBlockData() instanceof Stairs ? (Stairs) block.getRelative(backFace).getBlockData() : null;
-        Stairs frontStairs = block.getRelative(frontFace).getBlockData() instanceof Stairs ? (Stairs) block.getRelative(frontFace).getBlockData() : null;
-        Stairs leftStairs = block.getRelative(leftFace).getBlockData() instanceof Stairs ? (Stairs) block.getRelative(leftFace).getBlockData() : null;
-        Stairs rightStairs = block.getRelative(rightFace).getBlockData() instanceof Stairs ? (Stairs) block.getRelative(rightFace).getBlockData() : null;
+    private fun handleStairs(block: Block, stairs: Stairs): Stairs.Shape {
+        val half = stairs.half
+        val backFace = stairs.facing
+        val frontFace = backFace.oppositeFace
+        val rightFace = rotateCW(backFace)
+        val leftFace = rightFace.oppositeFace
 
+        fun Block.getStairs(face: BlockFace): Stairs? =
+            getRelative(face).blockData as? Stairs
 
-        if ((backStairs != null && backStairs.getHalf() == half && backStairs.getFacing() == leftFace) && !(rightStairs != null && rightStairs.getHalf() == half && rightStairs.getFacing() == backFace)) {
-            return Stairs.Shape.OUTER_LEFT;
-        } else if ((backStairs != null && backStairs.getHalf() == half && backStairs.getFacing() == rightFace) && !(leftStairs != null && leftStairs.getHalf() == half && leftStairs.getFacing() == backFace)) {
-            return Stairs.Shape.OUTER_RIGHT;
-        } else if ((frontStairs != null && frontStairs.getHalf() == half && frontStairs.getFacing() == leftFace) && !(leftStairs != null && leftStairs.getHalf() == half && leftStairs.getFacing() == backFace)) {
-            return Stairs.Shape.INNER_LEFT;
-        } else if ((frontStairs != null && frontStairs.getHalf() == half && frontStairs.getFacing() == rightFace) && !(rightStairs != null && rightStairs.getHalf() == half && rightStairs.getFacing() == backFace)) {
-            return Stairs.Shape.INNER_RIGHT;
-        } else {
-            return Stairs.Shape.STRAIGHT;
+        val backStairs = block.getStairs(backFace)
+        val frontStairs = block.getStairs(frontFace)
+        val leftStairs = block.getStairs(leftFace)
+        val rightStairs = block.getStairs(rightFace)
+
+        return when {
+            backStairs?.let { it.half == half && it.facing == leftFace } == true &&
+                    rightStairs?.let { it.half == half && it.facing == backFace } != true -> Stairs.Shape.OUTER_LEFT
+
+            backStairs?.let { it.half == half && it.facing == rightFace } == true &&
+                    leftStairs?.let { it.half == half && it.facing == backFace } != true -> Stairs.Shape.OUTER_RIGHT
+
+            frontStairs?.let { it.half == half && it.facing == leftFace } == true &&
+                    leftStairs?.let { it.half == half && it.facing == backFace } != true -> Stairs.Shape.INNER_LEFT
+
+            frontStairs?.let { it.half == half && it.facing == rightFace } == true &&
+                    rightStairs?.let { it.half == half && it.facing == backFace } != true -> Stairs.Shape.INNER_RIGHT
+
+            else -> Stairs.Shape.STRAIGHT
         }
-
     }
 
-    private void onBlockBuildPacket(final PacketEvent event) {
-        Player player = event.getPlayer();
-        PacketContainer packet = event.getPacket();
-        MovingObjectPositionBlock clickInformation = packet.getMovingBlockPositions().read(0);
-        BlockPosition blockPosition = clickInformation.getBlockPosition();
-        Vector posVector = clickInformation.getPosVector();
+    private fun onBlockBuildPacket(event: PacketEvent) {
+        val player: Player? = event.player
+        val packet: PacketContainer = event.packet
+        val clickInformation: MovingObjectPositionBlock = packet.movingBlockPositions.read(0)
+        val blockPosition: BlockPosition = clickInformation.blockPosition
+        val posVector: Vector = clickInformation.posVector
 
-        double relativeX = posVector.getX() - blockPosition.getX();
+        var relativeX: Double = posVector.x - blockPosition.x
 
         if (relativeX < 2) {
-            playerPacketDataHashMap.remove(player);
-            return;
+            playerPacketDataHashMap.remove(player)
+            return
         }
-        int protocolValue = ((int) relativeX - 2) / 2;
-        playerPacketDataHashMap.put(player, new PacketData(clickInformation.getBlockPosition(), protocolValue));
-        int relativeInt = (int) relativeX;
-        relativeX -= (relativeInt / 2) * 2; //Remove largest multiple of 2.
-        posVector.setX(relativeX + blockPosition.getX());
-        clickInformation.setPosVector(posVector);
-        packet.getMovingBlockPositions().write(0, clickInformation);
+
+        val protocolValue = (relativeX.toInt() - 2) / 2
+        playerPacketDataHashMap.put(player, PacketData(clickInformation.blockPosition, protocolValue))
+        val relativeInt = relativeX.toInt()
+        relativeX -= ((relativeInt / 2) * 2).toDouble()
+        posVector.setX(relativeX + blockPosition.x)
+        clickInformation.posVector = posVector
+        packet.movingBlockPositions.write(0, clickInformation)
     }
 
-    private void onCustomPayload(final PacketEvent event) {
-        PacketContainer packet = event.getPacket();
-        MinecraftKey key = packet.getMinecraftKeys().readSafely(0);
-        if (key == null || !(key.getPrefix().equals("carpet") && key.getKey().equals("hello"))) {
-            return;
+    private fun onCustomPayload(event: PacketEvent) {
+        val packet: PacketContainer = event.packet
+        val key: MinecraftKey? = packet.minecraftKeys.readSafely(0)
+
+        if (key == null || !(key.prefix == "carpet" && key.key == "hello")) {
+            return
         }
-        ByteBuf data = (ByteBuf) packet.getModifier().read(1);
+
+        val data: ByteBuf = packet.modifier.read(1) as ByteBuf
+
         try {
-            DataInputStream in = new DataInputStream(new ByteBufInputStream(data));
-            if (StreamSerializer.getDefault().deserializeVarInt(in) != 420) {
-                return;
-            }
-            PacketContainer rulePacket = new PacketContainer(PacketType.Play.Server.CUSTOM_PAYLOAD);
-            packet.getMinecraftKeys().write(0, new MinecraftKey("carpet", "hello"));
-            NbtCompound abpRule = NbtFactory.ofCompound("Rules", List.of(NbtFactory.of("Value", "true"), NbtFactory.of("Manager", "carpet"), NbtFactory.of("Rule", "accurateBlockPlacement")));
-            ByteArrayOutputStream rawData = new ByteArrayOutputStream();
-            DataOutputStream outputStream = new DataOutputStream(rawData);
-            StreamSerializer.getDefault().serializeVarInt(outputStream, 1);
-            StreamSerializer.getDefault().serializeCompound(outputStream, abpRule);
-            rulePacket.getModifier().write(1, MinecraftReflection.getPacketDataSerializer(Unpooled.wrappedBuffer(rawData.toByteArray())));
-            protocolManager.sendServerPacket(event.getPlayer(), rulePacket);
-        } catch (IOException | InvocationTargetException ignored) {
+            val stream = DataInputStream(ByteBufInputStream(data))
+
+            if (StreamSerializer.getDefault().deserializeVarInt(stream) != 420) return
+
+            val rulePacket = PacketContainer(PacketType.Play.Server.CUSTOM_PAYLOAD)
+            packet.minecraftKeys.write(0, MinecraftKey("carpet", "hello"))
+            val abpRule: NbtCompound? = NbtFactory.ofCompound(
+                "Rules",
+                listOf<NbtBase<String?>?>(
+                    NbtFactory.of("Value", "true"),
+                    NbtFactory.of("Manager", "carpet"),
+                    NbtFactory.of("Rule", "accurateBlockPlacement")
+                )
+            )
+            val rawData = ByteArrayOutputStream()
+            val outputStream = DataOutputStream(rawData)
+            StreamSerializer.getDefault().serializeVarInt(outputStream, 1)
+            StreamSerializer.getDefault().serializeCompound(outputStream, abpRule)
+            rulePacket.modifier
+                .write(1, MinecraftReflection.getPacketDataSerializer(Unpooled.wrappedBuffer(rawData.toByteArray())))
+            protocolManager.sendServerPacket(event.player, rulePacket)
+        } catch (_: IOException) {
+        } catch (_: InvocationTargetException) {
         }
     }
-
 }

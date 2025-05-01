@@ -1,6 +1,6 @@
-package net.dungeondev.accurateblockplacement;
+package accurateblockplacement
 
-import com.comphenix.protocol.wrappers.BlockPosition;
+import com.comphenix.protocol.wrappers.BlockPosition
 
-public record PacketData(BlockPosition block, int protocolValue)
-{}
+@JvmRecord
+data class PacketData(val block: BlockPosition?, val protocolValue: Int)

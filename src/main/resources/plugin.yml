@@ -1,7 +1,7 @@
-name: SpigotAccurateBlockPlacement
-description: Implements the Carpet AccurateBlockPlacement protocol on Spigot.
-version: 1.0.1
-author: DungeonDev
-main: net.dungeondev.accurateblockplacement.AccurateBlockPlacement
+name: PaperAccurateBlockPlacement
+description: Implements the Carpet AccurateBlockPlacement protocol on Paper.
+version: 1.0.2
+author: DungeonDev, Evoloxi
+main: accurateblockplacement.AccurateBlockPlacement
 api-version: 1.19
 depend: [ProtocolLib]

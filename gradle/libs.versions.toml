@@ -1,0 +1,36 @@
+[versions]
+# Plugins
+kotlin = "2.1.20"
+shadow = "9.0.0-beta13"
+paperweight = "2.0.0-beta.16"
+run-paper = "2.3.1"
+
+# Libraries
+twilight = "1.1.0"
+paperlib = "1.0.7"
+bstats = "3.0.2"
+lamp = "4.0.0-rc.10"
+adventure = "4.21.0"
+adventure-platform-bukkit = "4.3.4"
+protocol = "5.3.0"
+
+[libraries]
+twilight = { module = "gg.flyte:twilight", version.ref = "twilight" }
+paperlib = { module = "io.papermc:paperlib", version.ref = "paperlib" }
+bstats = { module = "org.bstats:bstats-bukkit", version.ref = "bstats" }
+
+lamp-common = { module = "io.github.revxrsal:lamp.common", version.ref = "lamp" }
+lamp-bukkit = { module = "io.github.revxrsal:lamp.bukkit", version.ref = "lamp" }
+lamp-brigadier = { module = "io.github.revxrsal:lamp.brigadier", version.ref = "lamp" }
+
+adventure = { module = "net.kyori:adventure", version.ref = "adventure" }
+adventure-text-minimessage = { module = "net.kyori:adventure-text-minimessage", version.ref = "adventure" }
+adventure-platform-bukkit = { module = "net.kyori:adventure-platform-bukkit", version.ref = "adventure-platform-bukkit" }
+
+#protocol-lib = { module = "", version.ref = "protocol" }
+
+[plugins]
+kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
+paperweight = { id = "io.papermc.paperweight.userdev", version.ref = "paperweight" }
+run-paper = { id = "xyz.jpenilla.run-paper", version.ref = "run-paper" }
