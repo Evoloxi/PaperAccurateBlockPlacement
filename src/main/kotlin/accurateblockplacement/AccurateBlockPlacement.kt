@@ -2,7 +2,6 @@ package accurateblockplacement
 
 import com.comphenix.protocol.PacketType
 import com.comphenix.protocol.ProtocolLibrary
-import com.comphenix.protocol.ProtocolManager
 import com.comphenix.protocol.events.ListenerPriority
 import com.comphenix.protocol.events.PacketAdapter
 import com.comphenix.protocol.events.PacketContainer
@@ -35,13 +34,11 @@ import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.util.Vector
-
 import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.IOException
 import java.lang.reflect.InvocationTargetException
-import java.util.HashMap
 
 @Suppress("unused")
 class AccurateBlockPlacement : JavaPlugin(), Listener {
@@ -94,7 +91,7 @@ class AccurateBlockPlacement : JavaPlugin(), Listener {
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     fun onBuildEvent(event: BlockPlaceEvent) {
-        val player: Player? = event.player
+        val player: Player = event.player
         
         val packetData = playerPacketDataHashMap[player] ?: return
         val packetBlock = packetData.block ?: return

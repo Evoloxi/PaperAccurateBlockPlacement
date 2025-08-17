@@ -24,13 +24,12 @@ dependencies {
     paperweight.paperDevBundle("1.21.5-R0.1-SNAPSHOT")
 
     implementation(libs.twilight)
-    implementation(libs.paperlib)
 
     implementation(libs.lamp.common)
     implementation(libs.lamp.bukkit)
     implementation(libs.lamp.brigadier)
 
-    implementation(files(rootProject.file("libs/ProtocolLib.jar")))
+    implementation(libs.protocol.lib)
 }
 
 java {
